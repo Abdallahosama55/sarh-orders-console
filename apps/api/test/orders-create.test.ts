@@ -220,6 +220,34 @@ describe('idempotency (R2-4 … R2-7)', () => {
   });
 });
 
+// A passing race test is evidence, not proof: a naive check-then-insert also passes the parallel
+// tests below almost every time, because its race window is microseconds wide. The guarantee
+// rests on the schema, so the schema is tested directly: the database itself refuses a second
+// order for the same user and key, and refuses an API order without a key.
+describe('the guarantee lives in the schema', () => {
+  const insertRaw = (createdBy: number, key: string | null) =>
+    ctx.db
+      .prepare(
+        `INSERT INTO orders (customer_name, customer_email, status, total_cents, created_at,
+                             created_by, idempotency_key, request_fingerprint)
+         VALUES ('Raw', 'raw@example.com', 'pending', 100, 0, ?, ?, ?)`,
+      )
+      .run(createdBy, key, key === null ? null : 'fingerprint');
+
+  it('rejects a second row with the same user and Idempotency-Key, whatever the code does', () => {
+    const key = randomUUID();
+    insertRaw(2, key);
+    expect(() => insertRaw(2, key)).toThrow(
+      /UNIQUE constraint failed: orders\.created_by, orders\.idempotency_key/,
+    );
+    expect(ordersWithKey(key)).toBe(1);
+  });
+
+  it('rejects an API-created order without a key (NULLs would escape the unique index)', () => {
+    expect(() => insertRaw(2, null)).toThrow(/CHECK constraint failed/);
+  });
+});
+
 describe('R2-9 proof: identical requests fired in parallel', () => {
   async function fireInParallel(times: number) {
     const server = await listen(ctx.app);
