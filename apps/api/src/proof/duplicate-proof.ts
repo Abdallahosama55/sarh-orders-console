@@ -148,6 +148,7 @@ export async function runDuplicateProof(
       const totalOrders = (db.prepare('SELECT COUNT(*) AS n FROM orders').get() as { n: number }).n;
       for (const [index, scenario] of scenarios.entries()) logScenario(log, index + 1, scenario);
       const passed = scenarios.every((scenario) => scenario.passed) && totalOrders === 2;
+      log('');
       log(
         `orders table: ${totalOrders} rows for 2 distinct keys  ${totalOrders === 2 ? '✔' : '✘'}`,
       );
