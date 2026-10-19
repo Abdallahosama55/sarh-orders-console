@@ -27,6 +27,7 @@ export default defineConfig(
       'apps/api/**/*.ts',
       'packages/**/*.ts',
       'e2e/**/*.ts',
+      'scripts/**/*.mjs',
       '*.{js,ts}',
       'apps/*/*.config.ts',
     ],
