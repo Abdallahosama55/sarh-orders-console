@@ -16,6 +16,7 @@ export function OrdersToolbar({ filters, onChange }: OrdersToolbarProps) {
         <span className="visually-hidden">Search orders</span>
         <input
           type="search"
+          dir="auto"
           placeholder="Search name, email or #order"
           value={filters.q ?? ''}
           maxLength={MAX_SEARCH_LENGTH}

@@ -98,7 +98,7 @@ function OrderDetails({ order, onDeleted }: { order: OrderDetail; onDeleted: () 
         <div>
           <dt>Customer</dt>
           <dd>
-            <span dir="auto">{order.customerName}</span>
+            <bdi>{order.customerName}</bdi>
             <br />
             <span className="muted">{order.customerEmail}</span>
           </dd>

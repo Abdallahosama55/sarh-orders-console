@@ -182,8 +182,8 @@ const OrderRow = memo(function OrderRow({ order, index, top, search }: OrderRowP
         </Link>
       </span>
       <span role="cell" className="customer">
-        <span className="customer__name" dir="auto">
-          {order.customerName}
+        <span className="customer__name">
+          <bdi>{order.customerName}</bdi>
         </span>
         <span className="customer__email">{order.customerEmail}</span>
       </span>

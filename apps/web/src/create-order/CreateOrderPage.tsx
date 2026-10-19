@@ -306,8 +306,8 @@ function OrderCreated({
         <dl className="details details--inline">
           <div>
             <dt>Customer</dt>
-            <dd dir="auto">
-              {order.customerName} · {order.customerEmail}
+            <dd>
+              <bdi>{order.customerName}</bdi> · {order.customerEmail}
             </dd>
           </div>
           <div>

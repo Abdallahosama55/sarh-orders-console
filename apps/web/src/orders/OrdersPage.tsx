@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { formatCount, STATUS_LABELS } from '../lib/format';
 import { useDebouncedValue } from '../lib/use-debounced-value';
@@ -50,20 +50,29 @@ export function OrdersPage() {
 /** Announced politely to screen readers whenever the result set changes (R1-10). */
 function ResultSummary({ list, filters }: { list: OrdersListQuery; filters: OrderFilters }) {
   const total = list.data?.pages[0]?.total;
-  let text = '';
+  let summary: ReactNode = null;
   if (list.isPending) {
-    text = 'Loading orders…';
+    summary = 'Loading orders…';
   } else if (total) {
     const count = `${formatCount(total.count)}${total.capped ? '+' : ''}`;
     const noun = total.count === 1 && !total.capped ? 'order' : 'orders';
-    const status = filters.status ? ` · ${STATUS_LABELS[filters.status]}` : '';
-    const search = filters.q ? ` matching “${filters.q}”` : '';
-    text = `${count} ${noun}${status}${search}`;
+    summary = (
+      <>
+        {count} {noun}
+        {filters.status && ` · ${STATUS_LABELS[filters.status]}`}
+        {filters.q && (
+          <>
+            {' '}
+            matching “<bdi>{filters.q}</bdi>”
+          </>
+        )}
+      </>
+    );
   }
   const refreshing = list.isFetching && !list.isPending && !list.isFetchingNextPage;
   return (
     <p className="result-summary" role="status">
-      {text}
+      {summary}
       {refreshing && <span className="muted"> · updating…</span>}
     </p>
   );
