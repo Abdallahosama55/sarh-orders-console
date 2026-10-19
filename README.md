@@ -63,7 +63,7 @@ npm run dev     # API on :3001 and the app on http://localhost:5173
 | `order_items_order_idx (order_id)`                   | Item counts, order detail                         |
 | `UNIQUE (created_by, idempotency_key)`               | R2                                                |
 
-An automated test runs `EXPLAIN QUERY PLAN` on every filter × sort × cursor combination and fails if one needs a sort step. Measured at 50k rows: about 0.06 ms per page at any depth; the worst search (a term matching every row) has a p95 of 18 ms. Full table in the [QA report](docs/qa/QA-REPORT.md#performance).
+An automated test runs `EXPLAIN QUERY PLAN` on every filter × sort × cursor combination and fails if one needs a sort step. Measured at 50k rows: about 0.06 ms per page at any depth; the worst search (a term matching every row) has a p95 of 18 ms. Full table in the [QA report](docs/qa/QA-REPORT.md#5-performance).
 
 ## Code review: the inherited auth middleware
 
