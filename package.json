@@ -1,0 +1,48 @@
+{
+  "name": "sarh-orders-console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orders Console — SARH full-stack take-home (React + Express + SQLite)",
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "workspaces": [
+    "packages/shared",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "setup": "npm run setup -w @orders/api",
+    "dev": "concurrently --names api,web --prefix-colors blue,magenta --kill-others-on-fail \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @orders/api",
+    "dev:web": "npm run dev -w @orders/web",
+    "seed": "npm run seed -w @orders/api",
+    "proof:duplicates": "npm run proof:duplicates -w @orders/api",
+    "bench": "npm run bench -w @orders/api",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --project=e2e",
+    "screenshots": "playwright test --project=screenshots",
+    "typecheck": "npm run typecheck --workspaces && tsc -p e2e",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "npm run build -w @orders/web",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.20.5",
+    "concurrently": "^9.2.5",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "~4.0.18"
+  }
+}
