@@ -3,6 +3,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+// RouterProvider comes from 'react-router' here, not 'react-router/dom' as in main.tsx: under
+// Vitest the two entry points resolve to different builds of the library (CJS vs ESM chunks),
+// which would give the app two router contexts. The only difference is flushSync scheduling,
+// which jsdom cannot exercise anyway; the Playwright suite covers it in a real browser.
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { createQueryClient } from '../app/query-client';
 import { routes } from '../app/routes';

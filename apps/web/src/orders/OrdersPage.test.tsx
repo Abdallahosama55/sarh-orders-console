@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { adminUser, makeOrderDetail, makeOrders, makePage } from '../test/fixtures';
@@ -62,6 +63,19 @@ describe('OrdersPage', () => {
     await waitFor(() => expect(requests.map((params) => params.get('q'))).toEqual([null, 'huda']));
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(requests).toHaveLength(2);
+  });
+
+  it('never drops keystrokes, even when the agent types faster than the URL can update', async () => {
+    const requests = recordListRequests(() => makePage(makeOrders(2)));
+    renderApp('/orders');
+    await screen.findByRole('link', { name: '#50000' });
+    const box = screen.getByRole('searchbox', { name: 'Search orders' });
+
+    // delay: null dispatches every keystroke back to back, without yielding in between.
+    await userEvent.setup({ delay: null }).type(box, 'mohammed.alharbi');
+
+    expect(box).toHaveValue('mohammed.alharbi');
+    await waitFor(() => expect(requests.at(-1)?.get('q')).toBe('mohammed.alharbi'));
   });
 
   it('changes the sort from the toolbar', async () => {
