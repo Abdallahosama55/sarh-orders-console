@@ -24,6 +24,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=e2e",
     "screenshots": "playwright test --project=screenshots",
+    "demo:record": "node scripts/record-demo.mjs",
     "qa:mutants": "node scripts/mutation-check.mjs",
     "typecheck": "npm run typecheck --workspaces && tsc -p e2e",
     "lint": "eslint .",

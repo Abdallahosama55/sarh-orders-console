@@ -4,6 +4,8 @@ A small slice of an operations console for the SARH full-stack take-home (v2, se
 
 ![Orders list at 50,000 rows](docs/screenshots/01-orders-list.png)
 
+**Demo video (84 s):** [`docs/demo/orders-console-demo.webm`](docs/demo/orders-console-demo.webm) shows the rapid-filter test, a double-click and a lost response on create, the duplicate proof, and the slow stats page cancelling and recovering. It is an automated recording of the real app (`npm run demo:record`), with captions explaining each step.
+
 **Read next:** [DECISIONS.md](DECISIONS.md) · [SCALE.md](SCALE.md) · [QA report](docs/qa/QA-REPORT.md) · [Test plan](docs/qa/TEST-PLAN.md) · specs ([requirements](docs/specs/01-requirements.md) → [design](docs/specs/02-design.md) → [tasks](docs/specs/03-tasks.md))
 
 ## Run it
