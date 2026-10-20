@@ -44,6 +44,7 @@ const MUTANTS = [
   ['W14', 'the draft saves a stale key ("Create another order", then reload)', [['apps/web/src/create-order/order-draft.ts', 'JSON.stringify({ idempotencyKey: key.current, values })', 'JSON.stringify({ idempotencyKey: initial.idempotencyKey, values })']], web('src/create-order/CreateOrderPage.test.tsx')],
   ['W15', 'body read outside the network-error mapping', [['apps/web/src/lib/api-client.ts', '    // The body can fail after the headers arrived: a dropped connection, or our timeout.\n    payload = await readJson(response);\n', ''], ['apps/web/src/lib/api-client.ts', '  if (!response.ok) throw toApiError(response.status, payload);', '  payload = await readJson(response);\n  if (!response.ok) throw toApiError(response.status, payload);']], web('src/lib/api-client.test.ts')],
   ['W16', 'drawer parses ids with Number() ("1e3" opens order 1000)', [['apps/web/src/orders/OrderDrawer.tsx', 'const id = parseOrderId(orderId);', 'const id = Number(orderId) || null;']], web('src/orders/OrdersPage.test.tsx')],
+  ['W17', 'pages read the session query, not the user <RequireAuth> let through', [['apps/web/src/auth/session.ts', 'const user = useContext(CurrentUserContext);', 'const user = useSession().data;']], web('src/auth/auth-flow.test.tsx')],
 ];
 
 // prettier-ignore
