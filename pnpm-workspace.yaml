@@ -1,0 +1,18 @@
+# pnpm support. npm stays the reference (package-lock.json and "workspaces" in package.json),
+# but pnpm ignores that field, so the workspaces are listed again here.
+packages:
+  - packages/*
+  - apps/*
+
+# Workspace packages are referenced npm-style ("@orders/shared": "*"): link them, never fetch them.
+linkWorkspacePackages: true
+
+# pnpm runs dependency build scripts only when allowed. better-sqlite3 needs its native binding;
+# msw's postinstall only copies a service worker this project does not use.
+allowBuilds: # pnpm 11
+  better-sqlite3: true
+  esbuild: true
+  msw: false
+onlyBuiltDependencies: # pnpm 10
+  - better-sqlite3
+  - esbuild

@@ -5,4 +5,5 @@ data
 playwright-report
 test-results
 package-lock.json
+pnpm-lock.yaml
 docs/screenshots

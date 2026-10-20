@@ -16,6 +16,8 @@ npm run setup   # writes .env with a random JWT secret, seeds 50,000 orders (~2 
 npm run dev     # API on :3001 and the app on http://localhost:5173
 ```
 
+pnpm (10 or 11) also works: `pnpm install` instead of `npm install`. `pnpm-workspace.yaml` lists the workspaces and allows better-sqlite3's native build, which pnpm blocks by default. npm's `package-lock.json` remains the reference lockfile.
+
 | Role  | Email              | Password     |
 | ----- | ------------------ | ------------ |
 | admin | `admin@sarh.test`  | `Admin#2026` |
