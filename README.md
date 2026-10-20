@@ -1,5 +1,7 @@
 # Orders Console
 
+[![CI](https://github.com/Abdallahosama55/sarh-orders-console/actions/workflows/ci.yml/badge.svg)](https://github.com/Abdallahosama55/sarh-orders-console/actions/workflows/ci.yml)
+
 A small slice of an operations console for the SARH full-stack take-home (v2, senior). Agents search 50,000 orders instantly, never see stale results, and register phone orders, where **one submission can never become two orders**. Stack: React 19, an Express 5 API and SQLite, all TypeScript.
 
 ![Orders list at 50,000 rows](docs/screenshots/01-orders-list.png)
@@ -118,7 +120,6 @@ The brief leaves these open; the full list is in [requirements §3](docs/specs/0
 - **Status changes, user management, password reset, refresh tokens, MFA.** Not asked for. Sessions last one 8-hour shift and can be revoked.
 - **Deployment, HTTPS, CSP headers on served HTML.** Dev runs on Vite; `helmet` covers API responses. The cookie is `Secure` in production.
 - **Full Arabic / RTL interface.** The data supports Arabic (search, `<bdi>` isolation, Arabic-Indic digits in prices), but the UI is English.
-- **CI execution.** `.github/workflows/ci.yml` runs verify + E2E, but it has not run on GitHub yet because this repository has no remote.
 
 ## Notes for reviewers
 

@@ -9,20 +9,21 @@
 
 ## 1. Results
 
-| Check                                           | Command                                                                  | Result                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| Types, lint, format, all Vitest tests           | `npm run verify`                                                         | Pass                                                                  |
-| Unit, API integration, multi-process, component | `npm test`                                                               | **226 / 226** passed in 23 files, ~6.5 s                              |
-| End-to-end (Chromium, real API, 50k rows)       | `npm run test:e2e`                                                       | **18 / 18**; **54 / 54** with `--repeat-each=3` (no flakes)           |
-| R2 duplicate proof (two API processes, one DB)  | `npm run proof:duplicates`                                               | **PASS**: 1 order per key in all 3 scenarios; 2 rows for 2 keys       |
-| Mutation checks                                 | `npm run qa:mutants -- --e2e`                                            | **28 killed, 1 survived as declared** (§4), 80 s                      |
-| Performance at 50,000 rows                      | `npm run bench`                                                          | worst p95 **17.9 ms** (target < 50 ms)                                |
-| Seed determinism                                | `seed.test` + a full 50k double-seed SHA-256 check                       | identical (`27c9de2a…`)                                               |
-| Dependencies                                    | `npm audit`                                                              | **0 vulnerabilities** (after Q14)                                     |
-| Fresh clone, empty npm cache                    | `git clone` → `npm install` → `npm run setup` → `npm test`               | **25 s** in total (15 s + 3 s + 7 s)                                  |
-| Install with pnpm 11.22 and 10.34               | `pnpm install` → `npm run setup` → `npm run verify` → `npm run test:e2e` | Pass (226 tests, 18 E2E); also over an npm-created `node_modules`     |
-| Production bundle in a browser                  | `npm run build` + `vite preview` + Playwright                            | Renders, signs in, filters, lossless typing; chunks 34 / 200 / 316 kB |
-| Secrets                                         | `git ls-files`                                                           | only `.env.example`; `.env` and `data/*.db` are ignored               |
+| Check                                           | Command                                                                  | Result                                                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Types, lint, format, all Vitest tests           | `npm run verify`                                                         | Pass                                                                                                      |
+| Unit, API integration, multi-process, component | `npm test`                                                               | **226 / 226** passed in 23 files, ~6.5 s                                                                  |
+| End-to-end (Chromium, real API, 50k rows)       | `npm run test:e2e`                                                       | **18 / 18**; **54 / 54** with `--repeat-each=3` (no flakes)                                               |
+| R2 duplicate proof (two API processes, one DB)  | `npm run proof:duplicates`                                               | **PASS**: 1 order per key in all 3 scenarios; 2 rows for 2 keys                                           |
+| Mutation checks                                 | `npm run qa:mutants -- --e2e`                                            | **28 killed, 1 survived as declared** (§4), 80 s                                                          |
+| Performance at 50,000 rows                      | `npm run bench`                                                          | worst p95 **17.9 ms** (target < 50 ms)                                                                    |
+| Seed determinism                                | `seed.test` + a full 50k double-seed SHA-256 check                       | identical (`27c9de2a…`)                                                                                   |
+| Dependencies                                    | `npm audit`                                                              | **0 vulnerabilities** (after Q14)                                                                         |
+| Fresh clone, empty npm cache                    | `git clone` → `npm install` → `npm run setup` → `npm test`               | **25 s** in total (15 s + 3 s + 7 s)                                                                      |
+| Install with pnpm 11.22 and 10.34               | `pnpm install` → `npm run setup` → `npm run verify` → `npm run test:e2e` | Pass (226 tests, 18 E2E); also over an npm-created `node_modules`                                         |
+| CI on GitHub Actions (Ubuntu)                   | `.github/workflows/ci.yml` on push                                       | Pass on the first run: `npm ci` 8 s · `verify` 35 s · Playwright install 20 s · E2E 38 s (110 s in total) |
+| Production bundle in a browser                  | `npm run build` + `vite preview` + Playwright                            | Renders, signs in, filters, lossless typing; chunks 34 / 200 / 316 kB                                     |
+| Secrets                                         | `git ls-files`                                                           | only `.env.example`; `.env` and `data/*.db` are ignored                                                   |
 
 ## 2. Defects found by QA and fixed
 
@@ -154,7 +155,6 @@ Scripted Playwright walkthroughs (screenshots reviewed by eye) of the dev server
 - **No automated accessibility audit** (axe). Accessibility is covered only through role- and label-based queries, `aria-sort`, `aria-live` and `aria-invalid` assertions.
 - **No multi-user load test.** The benchmark measures single-query latency; the API is one process with a synchronous SQLite driver (see SCALE.md).
 - **jsdom cannot reproduce input-timing races** (Q8). They are covered by E2E only.
-- **The CI workflow has never run on GitHub** (no remote). Every step in it was run locally.
 - **Business-level duplicates** (two separate drafts of the same order) are out of scope by design; see DECISIONS.md.
 
 ## 9. Reproduce
