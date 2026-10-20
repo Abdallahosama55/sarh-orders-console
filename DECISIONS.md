@@ -6,7 +6,7 @@ Three decisions, each with the alternative that was seriously weighed and why it
 
 This repository was built in a pair-programming session with **Claude Code (Claude Opus 5.5)**. It wrote the spec documents first, then most of the implementation and tests. It ran the QA loop: Vitest, Playwright, mutation checks, benchmarks, and browser walkthroughs of the dev server and the production build. It also drafted these documents. Every number in the QA report comes from a command that was actually run, and the commit history keeps the bugs QA found and how each was fixed.
 
-<!-- Candidate: add a sentence or two on what you reviewed, changed or decided yourself before submitting. -->
+**My part.** I set the brief for that session: spec-driven development, a full QA pass, and senior-level depth. I ran the app on my own machine with pnpm, which exposed a setup failure (Q16 in the QA report) that was then fixed. The decisions below were drafted with the assistant. I am submitting them as my position, and I expect to explain, defend and change them live.
 
 ---
 
