@@ -36,7 +36,7 @@ const MUTANTS = [
   ['W9', 'stats request not cancelled on leave', [['apps/web/src/stats/use-order-stats.ts', 'getOrderStats(signal)', 'getOrderStats()']], web('src/stats/StatsPage.test.tsx')],
   ['W10', 'search not debounced', [['apps/web/src/orders/OrdersPage.tsx', 'const SEARCH_DEBOUNCE_MS = 300;', 'const SEARCH_DEBOUNCE_MS = 0;']], web('src/orders/OrdersPage.test.tsx')],
   ['W11', 'admin controls shown to agents', [['apps/web/src/auth/AdminOnly.tsx', "useCurrentUser().role === 'admin' ? children : null", 'children']], web('src/orders/OrdersPage.test.tsx')],
-  ['W12', 'open redirect through ?next=', [['apps/web/src/auth/session.ts', "if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\\\'))", 'if (!next)']], web('src/auth')],
+  ['W12', 'open redirect through ?next=', [['apps/web/src/auth/session.ts', 'if (url.origin !== window.location.origin) return DEFAULT_NEXT_PATH;', 'return next;']], web('src/auth')],
   ['W13', 'a 401 does not end the session', [['apps/web/src/app/query-client.ts', 'if (error instanceof ApiError && error.status === 401) client.setQueryData(sessionKey, null);', 'void error;']], web('src/orders/OrdersPage.test.tsx')],
 ];
 

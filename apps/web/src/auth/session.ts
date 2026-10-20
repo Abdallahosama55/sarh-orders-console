@@ -57,9 +57,20 @@ export function useLogout() {
   });
 }
 
-/** Only same-site relative paths, so `?next=https://evil.example` cannot redirect off-site. */
+const DEFAULT_NEXT_PATH = '/orders';
+
+/**
+ * Only same-origin paths, so `?next=https://evil.example` cannot redirect off-site. The value
+ * is resolved the way the browser will resolve it: the URL parser drops tabs and newlines, so
+ * a prefix check alone would let `/<tab>/evil.example` through as `//evil.example`.
+ */
 export function safeNextPath(next: string | null): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\'))
-    return '/orders';
-  return next;
+  if (!next?.startsWith('/')) return DEFAULT_NEXT_PATH;
+  try {
+    const url = new URL(next, window.location.origin);
+    if (url.origin !== window.location.origin) return DEFAULT_NEXT_PATH;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return DEFAULT_NEXT_PATH;
+  }
 }
