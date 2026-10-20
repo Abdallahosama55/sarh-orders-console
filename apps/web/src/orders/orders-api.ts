@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PAGE_SIZE,
   IDEMPOTENCY_KEY_HEADER,
   IDEMPOTENT_REPLAYED_HEADER,
   type CreateOrderInput,
@@ -10,7 +11,7 @@ import { devRequestHeaders } from '../dev/dev-flags';
 import { apiRequest } from '../lib/api-client';
 import type { OrderFilters } from './order-filters';
 
-export const PAGE_SIZE = 50;
+export const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 /** After this long we stop waiting and retry with the same key; the server dedupes. */
 export const CREATE_TIMEOUT_MS = 10_000;
 
