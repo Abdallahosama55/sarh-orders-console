@@ -25,6 +25,9 @@ const MUTANTS = [
   ['A13', 'count not capped (expected to survive: same output, unbounded cost, see `npm run bench`)', [['apps/api/src/orders/orders.repository.ts', 'LIMIT ${COUNT_CAP + 1})', ')']], api('test/orders-list.test.ts'), 'survive'],
   ['A14', 'stats work continues after the client leaves', [['apps/api/src/orders/orders.router.ts', 'waitForSlowReport(delayMs, abortSignalFor(res))', 'waitForSlowReport(delayMs, new AbortController().signal)']], api('test/orders-stats.test.ts')],
   ['A15', 'order detail shows soft-deleted orders', [['apps/api/src/orders/orders.repository.ts', 'WHERE o.id = ? AND o.deleted_at IS NULL', 'WHERE o.id = ?']], api('test/auth.test.ts')],
+  ['A16', 'a bare number hides name and email matches', [['apps/api/src/orders/orders.repository.ts', "where.push(orderNumber ? `(o.id = @orderNumber OR ${text})` : text);", "where.push(orderNumber ? 'o.id = @orderNumber' : text);"]], api('test/orders-list.test.ts')],
+  ['A17', 'a failed cold start is cached for the life of the instance', [['apps/api/src/vercel-handler.ts', 'if (app === starting) app = undefined;', 'void starting;']], api('test/vercel-handler.test.ts')],
+  ['A18', 'control characters decoded into the log line (log forging)', [['apps/api/src/http/request-logger.ts', 'const query = decodeURIComponent(params.toString()).replace(CONTROL_CHARACTERS, (character) =>\n    encodeURIComponent(character),\n  );', 'const query = decodeURIComponent(params.toString());']], api('src/http/request-logger.test.ts')],
   ['W1', 'list request ignores its AbortSignal', [['apps/web/src/orders/use-orders-list.ts', 'listOrders({ ...filters, cursor: pageParam }, signal)', 'listOrders({ ...filters, cursor: pageParam })']], web('src/orders/OrdersPage.race.test.tsx')],
   ['W2', "keep the previous filter's rows while loading", [['apps/web/src/orders/use-orders-list.ts', 'initialPageParam: null as string | null,', 'initialPageParam: null as string | null,\n    placeholderData: (previous) => previous,']], web('src/orders/OrdersPage.race.test.tsx')],
   ['W3', 'cache key ignores the filters', [['apps/web/src/orders/use-orders-list.ts', 'queryKey: orderKeys.list(filters),', 'queryKey: orderKeys.lists(),']], web('src/orders')],
@@ -38,6 +41,9 @@ const MUTANTS = [
   ['W11', 'admin controls shown to agents', [['apps/web/src/auth/AdminOnly.tsx', "useCurrentUser().role === 'admin' ? children : null", 'children']], web('src/orders/OrdersPage.test.tsx')],
   ['W12', 'open redirect through ?next=', [['apps/web/src/auth/session.ts', 'if (url.origin !== window.location.origin) return DEFAULT_NEXT_PATH;', 'return next;']], web('src/auth')],
   ['W13', 'a 401 does not end the session', [['apps/web/src/app/query-client.ts', 'if (error instanceof ApiError && error.status === 401) client.setQueryData(sessionKey, null);', 'void error;']], web('src/orders/OrdersPage.test.tsx')],
+  ['W14', 'the draft saves a stale key ("Create another order", then reload)', [['apps/web/src/create-order/order-draft.ts', 'JSON.stringify({ idempotencyKey: key.current, values })', 'JSON.stringify({ idempotencyKey: initial.idempotencyKey, values })']], web('src/create-order/CreateOrderPage.test.tsx')],
+  ['W15', 'body read outside the network-error mapping', [['apps/web/src/lib/api-client.ts', '    // The body can fail after the headers arrived: a dropped connection, or our timeout.\n    payload = await readJson(response);\n', ''], ['apps/web/src/lib/api-client.ts', '  if (!response.ok) throw toApiError(response.status, payload);', '  payload = await readJson(response);\n  if (!response.ok) throw toApiError(response.status, payload);']], web('src/lib/api-client.test.ts')],
+  ['W16', 'drawer parses ids with Number() ("1e3" opens order 1000)', [['apps/web/src/orders/OrderDrawer.tsx', 'const id = parseOrderId(orderId);', 'const id = Number(orderId) || null;']], web('src/orders/OrdersPage.test.tsx')],
 ];
 
 // prettier-ignore
