@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
-import { useSession } from './session';
+import { CurrentUserContext, useSession } from './session';
 
 export function RequireAuth() {
   const session = useSession();
@@ -22,5 +22,9 @@ export function RequireAuth() {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?next=${next}`} replace />;
   }
-  return <Outlet />;
+  return (
+    <CurrentUserContext value={session.data}>
+      <Outlet />
+    </CurrentUserContext>
+  );
 }

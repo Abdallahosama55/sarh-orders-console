@@ -1,5 +1,6 @@
 import type { LoginInput, SessionUser } from '@orders/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError, apiRequest } from '../lib/api-client';
 import { clearSessionStore } from '../lib/storage';
@@ -26,11 +27,18 @@ export function useSession() {
   });
 }
 
-/** Only valid below <RequireAuth>, which guarantees a user. */
+/**
+ * The user <RequireAuth> let through. Pages read it here rather than from the session query:
+ * when the session ends (sign-out, a 401), a page can re-render before <RequireAuth> has
+ * redirected, and it must still see the user it was rendered for, never "no user".
+ */
+export const CurrentUserContext = createContext<SessionUser | null>(null);
+
+/** Only valid below <RequireAuth>, which provides the user. */
 export function useCurrentUser(): SessionUser {
-  const { data } = useSession();
-  if (!data) throw new Error('useCurrentUser() must be rendered inside <RequireAuth>');
-  return data;
+  const user = useContext(CurrentUserContext);
+  if (!user) throw new Error('useCurrentUser() must be rendered inside <RequireAuth>');
+  return user;
 }
 
 export function useLogin() {

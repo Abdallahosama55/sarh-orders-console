@@ -7,9 +7,9 @@ import { http, HttpResponse } from 'msw';
 // Vitest the two entry points resolve to different builds of the library (CJS vs ESM chunks),
 // which would give the app two router contexts. The only difference is flushSync scheduling,
 // which jsdom cannot exercise anyway; the Playwright suite covers it in a real browser.
-import { createMemoryRouter, RouterProvider } from 'react-router';
+import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router';
 import { createQueryClient } from '../app/query-client';
-import { routes } from '../app/routes';
+import { routes as appRoutes } from '../app/routes';
 import { agentUser } from './fixtures';
 import { server } from './server';
 
@@ -18,12 +18,14 @@ interface RenderOptions {
   user?: SessionUser | null;
   /** Use the production retry policy instead of failing fast (default: fail fast). */
   productionRetries?: boolean;
+  /** The app's routes, or a variant of them (e.g. with a loader that holds a navigation). */
+  routes?: RouteObject[];
 }
 
 /** Renders the real app (routes, query client, providers) at `path`, signed in as `user`. */
 export function renderApp(
   path: string,
-  { user = agentUser, productionRetries = false }: RenderOptions = {},
+  { user = agentUser, productionRetries = false, routes = appRoutes }: RenderOptions = {},
 ) {
   server.use(
     http.get('/api/auth/me', () =>

@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { routes as appRoutes } from '../app/routes';
 import { agentUser } from '../test/fixtures';
 import { renderApp } from '../test/render';
 import { server } from '../test/server';
@@ -63,5 +64,32 @@ describe('sign-in flow', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
     expect(window.sessionStorage.getItem('orders-console:create-order-draft')).toBeNull();
+  });
+
+  it('never renders the signed-in layout without a user, however late the navigation lands', async () => {
+    server.use(http.post('/api/auth/logout', () => new HttpResponse(null, { status: 204 })));
+    // Hold the navigation to /login: sign-out must not rely on it winning a race (it lost on CI).
+    let openLogin = () => {};
+    const loginReady = new Promise<null>((resolve) => (openLogin = () => resolve(null)));
+    const routes = appRoutes.map((route) =>
+      route.path === '/login' ? { ...route, loader: () => loginReady } : route,
+    );
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { events, router } = renderApp('/orders', { routes });
+      const signOut = await screen.findByRole('button', { name: 'Sign out' });
+      await events.click(signOut);
+      await waitFor(() => expect(router.state.navigation.state).toBe('loading'));
+      // The layout re-renders when the sign-out settles, before /login has landed. That render
+      // used to read the ended session and throw.
+      await waitFor(() => expect(signOut).toBeEnabled());
+
+      expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
+      expect(consoleError).not.toHaveBeenCalled();
+      openLogin();
+      await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });
