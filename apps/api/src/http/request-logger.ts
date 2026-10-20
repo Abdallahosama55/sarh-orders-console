@@ -15,6 +15,9 @@ export function requestLogger(logger: Logger): RequestHandler {
   };
 }
 
+/** Line breaks (CR, LF, NEL, U+2028/9) and other control characters. */
+const CONTROL_CHARACTERS = /[\p{Cc}\p{Zl}\p{Zp}]/gu;
+
 /** Search terms are customer names and emails, which are PII and must not reach logs (NFR-6). */
 export function redactUrl(url: string): string {
   const queryStart = url.indexOf('?');
@@ -22,5 +25,10 @@ export function redactUrl(url: string): string {
   const params = new URLSearchParams(url.slice(queryStart + 1));
   if (params.has('q')) params.set('q', '<redacted>');
   if (params.has('cursor')) params.set('cursor', '…');
-  return `${url.slice(0, queryStart)}?${decodeURIComponent(params.toString())}`;
+  // Decoded so the line stays readable, except control characters: a decoded %0A would end
+  // the line here and let the request write a forged one after it.
+  const query = decodeURIComponent(params.toString()).replace(CONTROL_CHARACTERS, (character) =>
+    encodeURIComponent(character),
+  );
+  return `${url.slice(0, queryStart)}?${query}`;
 }
