@@ -1,5 +1,5 @@
 # Never upload local secrets or data.
-.env
+.env*
 data
 *.db
 *.db-wal

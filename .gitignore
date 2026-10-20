@@ -13,3 +13,4 @@ test-results/
 # npm is the reference package manager (package-lock.json); pnpm users resolve from the same ranges.
 pnpm-lock.yaml
 .vercel
+.env*.local

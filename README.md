@@ -8,6 +8,8 @@ A small slice of an operations console for the SARH full-stack take-home (v2, se
 
 **Demo video (84 s):** [`docs/demo/orders-console-demo.webm`](docs/demo/orders-console-demo.webm) shows the rapid-filter test, a double-click and a lost response on create, the duplicate proof, and the slow stats page cancelling and recovering. It is an automated recording of the real app (`npm run demo:record`), with captions explaining each step.
 
+**Live demo:** https://sarh-orders-console.vercel.app (sign in with the accounts below). It runs on Vercel serverless functions, where each instance seeds its own copy of the 50,000-order SQLite database on cold start. Orders you add can vanish when an instance recycles, and concurrent requests can reach different copies. So the guarantees that need one shared database, R2 under parallel load above all, are proven by `npm run proof:duplicates` and CI, not by the demo URL ([details](#deployment-vercel-demo)).
+
 **Read next:** [DECISIONS.md](DECISIONS.md) · [SCALE.md](SCALE.md) · [QA report](docs/qa/QA-REPORT.md) · [Test plan](docs/qa/TEST-PLAN.md) · specs ([requirements](docs/specs/01-requirements.md) → [design](docs/specs/02-design.md) → [tasks](docs/specs/03-tasks.md))
 
 ## Run it
@@ -126,6 +128,13 @@ The brief leaves these open; the full list is in [requirements §3](docs/specs/0
 - **No `<StrictMode>`, deliberately.** Its development-only double mount makes React Query abort and re-issue every query's first request. That would put phantom cancellations in the network panel and the API log, exactly where the rapid-filter and cancel-on-leave behaviour is checked. Lint runs the React Compiler rule set instead.
 - **The DEV bar** only adds request headers (`X-Debug-Latency`, `X-Debug-Fail`). The API ignores them when `NODE_ENV=production`, and the bar is absent from production builds.
 - **If a port is busy,** the dev servers stop rather than drift to another port, because the API's CSRF check only accepts the configured origin. Change `PORT` / `APP_ORIGIN` in `.env`.
+
+## Deployment (Vercel demo)
+
+- `vercel.json` runs `scripts/vercel-build.mjs`, which writes Vercel's Build Output API directory: the static app plus one Node function for `/api/*`. The API is bundled by esbuild; the native SQLite addon ships as compiled on Vercel's Linux image.
+- `apps/api/src/vercel-handler.ts` seeds `/tmp/orders.db` on each instance's cold start (about 2.6 s), accepts the deployment's own domains in the CSRF check, and trusts exactly one proxy hop for rate limiting.
+- To deploy your own copy: `npx vercel link`, then `npx vercel env add JWT_SECRET production` (any random string of 32+ characters), then `npx vercel deploy --prod`.
+- This is a demo topology, not production. With no shared database, writes live in one instance's copy; a parallel burst of identical creates was observed landing on two instances. Production needs one shared database; see [SCALE.md](SCALE.md).
 
 ## Project layout
 
