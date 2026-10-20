@@ -1,10 +1,11 @@
 // The Vercel demo entry point: seeds its own database on cold start and serves the real app.
-import type { ListOrdersResponse } from '@orders/shared';
-import { mkdtempSync, rmSync } from 'node:fs';
+import type { ApiErrorBody, ListOrdersResponse } from '@orders/shared';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import type * as Seed from '../src/db/seed';
 import type * as VercelHandler from '../src/vercel-handler';
 import { AGENT, TEST_SECRET } from './helpers';
 
@@ -53,4 +54,48 @@ describe('Vercel handler', () => {
       .set('Origin', `https://${DEPLOYMENT}`)
       .expect(204);
   });
+
+  it('retries a failed cold start on the next request, and never serves a half-seeded database', async () => {
+    const databasePath = path.join(directory, 'cold-start', 'orders.db');
+    process.env.DATABASE_PATH = databasePath;
+    // The first seed dies halfway (say /tmp fills up): the file exists, the orders do not.
+    vi.doMock('../src/db/seed', async (importOriginal) => {
+      const real = await importOriginal<typeof Seed>();
+      let attempts = 0;
+      return {
+        ...real,
+        seedDatabase: async (options: Seed.SeedOptions) => {
+          if (++attempts > 1) return real.seedDatabase(options);
+          await real.seedDatabase({ ...options, orderCount: 0 });
+          throw new Error('ENOSPC: no space left on device');
+        },
+      };
+    });
+    vi.resetModules(); // a fresh instance: nothing cached from the tests above
+    const { default: coldHandler } = await import('../src/vercel-handler');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const failed = await request(coldHandler).get('/api/health').expect(503);
+      expect((failed.body as ApiErrorBody).error.code).toBe('internal_error');
+      expect(consoleError).toHaveBeenCalledOnce();
+      expect(existsSync(databasePath)).toBe(false);
+
+      await request(coldHandler).get('/api/health').expect(200, { ok: true });
+      expect(await countOrders(coldHandler)).toBe(120);
+    } finally {
+      consoleError.mockRestore();
+      vi.doUnmock('../src/db/seed');
+    }
+  });
 });
+
+async function countOrders(app: typeof handler): Promise<number | undefined> {
+  const login = await request(app)
+    .post('/api/auth/login')
+    .set('Origin', `https://${DEPLOYMENT}`)
+    .send({ email: AGENT.email, password: AGENT.password })
+    .expect(200);
+  const cookie = (login.headers['set-cookie']?.[0] ?? '').split(';')[0]!;
+  const list = await request(app).get('/api/orders').set('Cookie', cookie).expect(200);
+  return (list.body as ListOrdersResponse).total?.count;
+}

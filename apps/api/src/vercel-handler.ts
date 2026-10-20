@@ -2,8 +2,9 @@
 // Vercel functions have no persistent disk, so each serverless instance seeds its own SQLite
 // file in /tmp on cold start. Data added there lasts as long as that instance. It is a demo,
 // not a production topology; SCALE.md describes what production would need.
+import type { ApiErrorBody } from '@orders/shared';
 import type { Express } from 'express';
-import { existsSync } from 'node:fs';
+import { existsSync, renameSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createApp } from './app';
 import { loadConfig } from './config';
@@ -21,7 +22,11 @@ async function createVercelApp(): Promise<Express> {
   const config = loadConfig();
   if (!existsSync(config.databasePath)) {
     const orderCount = Number(process.env.SEED_ORDERS ?? DEFAULT_ORDER_COUNT);
-    await seedDatabase({ databasePath: config.databasePath, orderCount });
+    // Seed beside the real path, then rename: a seed that dies halfway must not leave a file
+    // that the next cold start would take for a complete database.
+    const seedingPath = `${config.databasePath}.seeding`;
+    await seedDatabase({ databasePath: seedingPath, orderCount });
+    renameSync(seedingPath, config.databasePath);
   }
   const db = openDatabase(config.databasePath);
   migrate(db);
@@ -44,6 +49,21 @@ function vercelOrigins(): string | undefined {
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  app ??= createVercelApp(); // once per instance, shared by concurrent requests
-  (await app)(req, res);
+  const starting = (app ??= createVercelApp()); // once per instance, shared by concurrent requests
+  let instance: Express;
+  try {
+    instance = await starting;
+  } catch (error) {
+    // A failed cold start is not cached: the next request tries again instead of this instance
+    // failing every request until Vercel recycles it.
+    if (app === starting) app = undefined;
+    console.error('Cold start failed:', error);
+    const body: ApiErrorBody = {
+      error: { code: 'internal_error', message: 'The server is starting up. Please retry.' },
+    };
+    res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '1' });
+    res.end(JSON.stringify(body));
+    return;
+  }
+  instance(req, res);
 }
