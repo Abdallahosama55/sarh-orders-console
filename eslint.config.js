@@ -12,6 +12,7 @@ export default defineConfig(
     '**/coverage',
     'data',
     'playwright-report',
+    '.vercel',
     'test-results',
   ]),
   js.configs.recommended,

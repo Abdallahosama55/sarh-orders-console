@@ -1,0 +1,15 @@
+# Never upload local secrets or data.
+.env
+data
+*.db
+*.db-wal
+*.db-shm
+# Not needed to build the deployment.
+**/node_modules
+**/dist
+.vercel
+docs/demo
+docs/screenshots
+playwright-report
+test-results
+coverage

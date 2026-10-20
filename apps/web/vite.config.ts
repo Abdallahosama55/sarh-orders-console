@@ -14,7 +14,8 @@ const REACT_PACKAGES = new Set([
   'cookie',
   'set-cookie-parser',
 ]);
-const PACKAGE_NAME = /[\\/]node_modules[\\/]((?:@[^\\/]+[\\/])?[^\\/]+)/;
+// The *last* node_modules segment names the package (pnpm nests them: node_modules/.pnpm/…/node_modules/react).
+const PACKAGE_NAME = /.*[\\/]node_modules[\\/]((?:@[^\\/]+[\\/])?[^\\/]+)/;
 
 /**
  * Libraries change far less often than the app, so they get their own long-cached chunks.

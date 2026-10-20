@@ -2,7 +2,7 @@
   "name": "sarh-orders-console",
   "version": "1.0.0",
   "private": true,
-  "description": "Orders Console \u2014 SARH full-stack take-home (React + Express + SQLite)",
+  "description": "Orders Console — SARH full-stack take-home (React + Express + SQLite)",
   "type": "module",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24"
@@ -38,6 +38,7 @@
     "@playwright/test": "1.63.0",
     "@types/node": "^22.20.5",
     "concurrently": "^9.2.5",
+    "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
