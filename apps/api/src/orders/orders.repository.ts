@@ -53,14 +53,15 @@ const SORT_COLUMN: Record<SortField, string> = {
   createdAt: 'o.created_at',
   total: 'o.total_cents',
 };
-const ORDER_NUMBER = /^#?([1-9]\d{0,8})$/;
+const ORDER_NUMBER = /^(#?)([1-9]\d{0,8})$/;
 /** The trigram index needs at least three characters to look anything up. */
 const TRIGRAM_MIN_CHARS = 3;
 
 /**
  * WHERE clauses shared by the page query and the count query. Search strategy (design §5.1):
- * an order number goes to the primary key, three or more characters go to the trigram index,
- * and shorter input falls back to an escaped LIKE scan that stops at the page LIMIT.
+ * `#123` goes to the primary key alone. A bare `123` matches the order number *or* names and
+ * emails, which often contain digits (`omar1990@…`). Name/email matching uses the trigram
+ * index from three characters, and an escaped LIKE scan that stops at the page LIMIT below that.
  */
 export function buildFilterSql({ q, status }: ListFilters): { where: string[]; params: SqlParams } {
   const where = ['o.deleted_at IS NULL'];
@@ -70,21 +71,25 @@ export function buildFilterSql({ q, status }: ListFilters): { where: string[]; p
     params.status = status;
   }
   if (q) {
-    const orderNumber = ORDER_NUMBER.exec(q)?.[1];
-    if (orderNumber) {
+    const [, hash, orderNumber] = ORDER_NUMBER.exec(q) ?? [];
+    if (orderNumber) params.orderNumber = Number(orderNumber);
+    if (orderNumber && hash) {
       where.push('o.id = @orderNumber');
-      params.orderNumber = Number(orderNumber);
-    } else if ([...q].length >= TRIGRAM_MIN_CHARS) {
-      where.push('o.id IN (SELECT rowid FROM orders_search WHERE orders_search MATCH @phrase)');
-      params.phrase = `"${q.replaceAll('"', '""')}"`; // an FTS5 string literal: everything inside is literal
     } else {
-      where.push(
-        `(o.customer_name LIKE @like ESCAPE '\\' OR o.customer_email LIKE @like ESCAPE '\\')`,
-      );
-      params.like = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
+      const text = nameOrEmailMatch(q, params);
+      where.push(orderNumber ? `(o.id = @orderNumber OR ${text})` : text);
     }
   }
   return { where, params };
+}
+
+function nameOrEmailMatch(q: string, params: SqlParams): string {
+  if ([...q].length >= TRIGRAM_MIN_CHARS) {
+    params.phrase = `"${q.replaceAll('"', '""')}"`; // an FTS5 string literal: everything inside is literal
+    return 'o.id IN (SELECT rowid FROM orders_search WHERE orders_search MATCH @phrase)';
+  }
+  params.like = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
+  return `(o.customer_name LIKE @like ESCAPE '\\' OR o.customer_email LIKE @like ESCAPE '\\')`;
 }
 
 /** Exported so tests and the benchmark can EXPLAIN exactly the SQL the API runs. */

@@ -212,9 +212,38 @@ describe('search', () => {
     }
   });
 
-  it('looks up an order number with or without #', async () => {
+  it('looks up "#42" by order number only', async () => {
     expect((await search('#42')).items.map((order) => order.id)).toEqual([42]);
-    expect((await search('42')).items.map((order) => order.id)).toEqual([42]);
+  });
+
+  it('matches a bare number against the order number and against names and emails', async () => {
+    // Emails often carry digits, so "142" must find this customer as well as order #142.
+    const { lastInsertRowid } = ctx.db
+      .prepare(
+        "INSERT INTO orders (customer_name, customer_email, status, total_cents, created_at) VALUES ('Omar Haddad', 'omar.haddad142@example.com', 'paid', 1000, ?)",
+      )
+      .run(FIXED_NOW - 30_000);
+    const reference = (digits: string) =>
+      (
+        ctx.db
+          .prepare(
+            `SELECT id FROM orders WHERE deleted_at IS NULL
+               AND (id = ? OR instr(customer_name, ?) > 0 OR instr(customer_email, ?) > 0)
+             ORDER BY created_at DESC, id DESC`,
+          )
+          .all(Number(digits), digits, digits) as { id: number }[]
+      ).map((row) => row.id);
+
+    // Three digits go through the trigram index, two through the short-input scan.
+    for (const [digits, orderNumber] of [
+      ['142', 142],
+      ['42', 42],
+    ] as const) {
+      const { ids } = await fetchAllPages({ q: digits, limit: '100' });
+      expect(ids).toContain(orderNumber);
+      expect(ids).toContain(Number(lastInsertRowid));
+      expect(ids).toEqual(reference(digits));
+    }
   });
 
   it('combines search with the status filter', async () => {
@@ -277,6 +306,14 @@ describe('query plans (R1-7)', () => {
     expect(plan({ sort: 'createdAt', dir: 'desc', q: 'harbi', limit: 50 })).toContain(
       'SCAN orders_search VIRTUAL TABLE',
     );
+  });
+
+  it('serves a bare number from the primary key and the trigram index, not a table scan', () => {
+    const detail = plan({ sort: 'createdAt', dir: 'desc', q: '142', limit: 50 });
+    expect(detail).toContain('MULTI-INDEX OR');
+    expect(detail).toContain('SEARCH o USING INTEGER PRIMARY KEY');
+    expect(detail).toContain('SCAN orders_search VIRTUAL TABLE');
+    expect(detail).not.toContain('SCAN o ');
   });
 });
 

@@ -56,7 +56,7 @@ pnpm (10 or 11) also works: `pnpm install` instead of `npm install`. `pnpm-works
 
 - **List (R1).** The URL holds the filters (`?q=&status=&sort=&dir=`). Each combination is its own React Query key, and the query's `AbortSignal` reaches `fetch`. A superseded request is cancelled, and a late answer can only land in its own cache entry, which nothing renders. The server pages with a keyset cursor `(sort value, id)`. TanStack Virtual keeps about 40 rows in the DOM however many pages are loaded.
 - **Create (R2).** The idempotency key belongs to the draft and is persisted with it. The server runs `INSERT … ON CONFLICT DO NOTHING` against `UNIQUE (created_by, idempotency_key)` inside one transaction. Same body: replay. Different body: `422`. Details and limits are in [DECISIONS.md](DECISIONS.md#1--r2-the-database-decides-what-the-same-order-is).
-- **Search.** `#123` looks up the order number. Three or more characters use an FTS5 **trigram** index, SQLite's `pg_trgm`. One or two characters fall back to an escaped `LIKE` scan that stops at the page limit.
+- **Search.** `#123` looks up the order number; a bare `123` also matches the digits in names and emails. Three or more characters use an FTS5 **trigram** index, SQLite's `pg_trgm`. One or two characters fall back to an escaped `LIKE` scan that stops at the page limit.
 - **Why SQLite.** The brief requires a real database that runs in under five minutes with no services. Every guarantee used here (unique index, transactions, `ON CONFLICT`, row-value keyset, trigram search) has a direct PostgreSQL equivalent; [SCALE.md](SCALE.md) covers the move.
 
 **Indexes:**
@@ -113,7 +113,7 @@ The brief leaves these open; the full list is in [requirements §3](docs/specs/0
 - "Revenue today" = paid, shipped or delivered orders created since midnight `Asia/Riyadh`.
 - O1's "one retry" = a visible error with a single Retry action, and no silent automatic retries that would double a 3–6 s wait.
 - Delete is a soft delete.
-- Search also accepts order numbers (`#123`).
+- Search also accepts order numbers: `#123` exactly, or `123` alongside names and emails that contain it.
 
 ## What I skipped and why
 

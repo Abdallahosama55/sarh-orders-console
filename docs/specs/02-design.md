@@ -140,7 +140,8 @@ LIMIT @limit + 1                                               -- +1 tells us if
 - The sort column comes from a whitelist map (`createdAt → created_at`, `total → total_cents`). User input never reaches the SQL text.
 - **Keyset cursor** = base64url of `[sort, dir, value, id]`. A cursor whose sort or direction differs from the request is rejected (`400 invalid_cursor`). Keyset paging is O(log n) at any depth and stable while agents insert new orders. OFFSET is neither (see DECISIONS.md).
 - **Search predicate**, chosen by input shape:
-  - `#123` / `123` → `o.id = @orderNumber` (A-8)
+  - `#123` → `o.id = @orderNumber` alone (A-8)
+  - `123` → `(o.id = @orderNumber OR <name/email predicate below>)`. Most emails carry digits (`omar1990@…`), so a bare number must not hide them. SQLite serves this as a `MULTI-INDEX OR` over the primary key and the trigram index.
   - ≥ 3 characters → `o.id IN (SELECT rowid FROM orders_search WHERE orders_search MATCH @phrase)`, with the input quoted as an FTS5 string (`"` doubled)
   - 1–2 characters → `customer_name LIKE @like ESCAPE '\' OR customer_email LIKE …`, with `%` and `_` escaped. The trigram index cannot serve fewer than three characters. This scan is bounded because it stops at `LIMIT`.
 

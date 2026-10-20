@@ -28,16 +28,16 @@ Goals, in priority order:
 
 The brief leaves these open. Each is a deliberate choice and is listed again in the README.
 
-| ID  | Assumption                                                                                                                                                                       |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A-1 | Single currency, **SAR**. Money is stored as integer halalas (cents) and never as floats.                                                                                        |
-| A-2 | The order amount is **derived from its line items** (Σ quantity × unit price). The server computes it and never accepts a total from the client.                                 |
-| A-3 | New orders start as `pending`. Status changes are out of scope.                                                                                                                  |
-| A-4 | Seeded orders represent the spreadsheet import, so they have no creator and no idempotency key.                                                                                  |
-| A-5 | "Revenue today" = orders **created** today in the business time zone (`Asia/Riyadh`) whose status is `paid`, `shipped` or `delivered`. There is no payment history to do better. |
-| A-6 | O1 "error state with one retry" = a visible error with a single **Retry** action. No silent automatic retries, which would double a 3–6 s wait before the agent sees anything.   |
-| A-7 | "Delete" means a **soft delete**: the order is hidden from the console but kept, with who deleted it and when. Orders are financial records.                                     |
-| A-8 | Search also accepts an order number (`#123` or `123`), because customers on the phone quote it. It is a small extension to "search name/email".                                  |
+| ID  | Assumption                                                                                                                                                                        |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A-1 | Single currency, **SAR**. Money is stored as integer halalas (cents) and never as floats.                                                                                         |
+| A-2 | The order amount is **derived from its line items** (Σ quantity × unit price). The server computes it and never accepts a total from the client.                                  |
+| A-3 | New orders start as `pending`. Status changes are out of scope.                                                                                                                   |
+| A-4 | Seeded orders represent the spreadsheet import, so they have no creator and no idempotency key.                                                                                   |
+| A-5 | "Revenue today" = orders **created** today in the business time zone (`Asia/Riyadh`) whose status is `paid`, `shipped` or `delivered`. There is no payment history to do better.  |
+| A-6 | O1 "error state with one retry" = a visible error with a single **Retry** action. No silent automatic retries, which would double a 3–6 s wait before the agent sees anything.    |
+| A-7 | "Delete" means a **soft delete**: the order is hidden from the console but kept, with who deleted it and when. Orders are financial records.                                      |
+| A-8 | Search also accepts an order number, because customers on the phone quote it. `#123` finds only that order; a bare `123` also matches names and emails, which often carry digits. |
 
 ## 4. Functional requirements
 
