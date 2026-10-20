@@ -6,6 +6,7 @@ import {
   createOrderInputSchema,
   idempotencyKeySchema,
   listOrdersQuerySchema,
+  parseOrderId,
 } from './orders';
 
 const validOrder = {
@@ -84,5 +85,15 @@ describe('idempotencyKeySchema', () => {
       true,
     );
     expect(idempotencyKeySchema.safeParse('order-1').success).toBe(false);
+  });
+});
+
+describe('parseOrderId', () => {
+  it('accepts canonical positive integers only, like the server', () => {
+    expect(parseOrderId('42')).toBe(42);
+    expect(parseOrderId('999999999')).toBe(999_999_999);
+    for (const raw of [undefined, '', '0', '-1', '1e3', '0x10', ' 5', '5.0', '042', '1000000000']) {
+      expect(parseOrderId(raw), String(raw)).toBeNull();
+    }
   });
 });

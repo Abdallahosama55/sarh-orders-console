@@ -9,6 +9,7 @@ export const orderKeys = {
   all: ['orders'] as const,
   lists: () => [...orderKeys.all, 'list'] as const,
   list: (filters: OrderFilters) => [...orderKeys.lists(), filters] as const,
-  detail: (id: number) => [...orderKeys.all, 'detail', id] as const,
+  /** `null`: the URL holds no valid order id, and the query is skipped. */
+  detail: (id: number | null) => [...orderKeys.all, 'detail', id] as const,
   stats: () => [...orderKeys.all, 'stats'] as const,
 };

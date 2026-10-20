@@ -5,6 +5,14 @@ export const ORDER_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cance
 export const orderStatusSchema = z.enum(ORDER_STATUSES);
 export type OrderStatus = z.infer<typeof orderStatusSchema>;
 
+/**
+ * An order id from a URL: canonical decimal digits only. `Number()` alone would read `1e3` as
+ * order 1000 and `0x10` as order 16; those are not ids.
+ */
+export function parseOrderId(raw: string | undefined): number | null {
+  return raw !== undefined && /^[1-9]\d{0,8}$/.test(raw) ? Number(raw) : null;
+}
+
 /** Statuses counted as revenue (assumption A-5). */
 export const REVENUE_STATUSES = [
   'paid',

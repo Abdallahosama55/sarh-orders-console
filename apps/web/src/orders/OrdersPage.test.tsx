@@ -198,6 +198,21 @@ describe('OrdersPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('treats a non-canonical id in the URL as no order instead of loading another', async () => {
+    const requested: string[] = [];
+    server.use(
+      http.get('/api/orders/:id', ({ params }) => {
+        requested.push(String(params.id));
+        return HttpResponse.json(makeOrderDetail({ id: Number(params.id) }));
+      }),
+    );
+    renderApp('/orders/1e3'); // Number('1e3') is 1000
+
+    const panel = await screen.findByRole('dialog', { name: 'Order #1e3' });
+    expect(within(panel).getByText('This order does not exist.')).toBeInTheDocument();
+    expect(requested).toEqual([]);
+  });
+
   it('sends the agent to the login page when the session expires', async () => {
     server.use(
       http.get('/api/orders', () =>

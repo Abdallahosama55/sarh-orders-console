@@ -1,5 +1,5 @@
-import type { OrderDetail } from '@orders/shared';
-import { useQuery } from '@tanstack/react-query';
+import { parseOrderId, type OrderDetail } from '@orders/shared';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { AdminOnly } from '../auth/AdminOnly';
@@ -13,15 +13,13 @@ import { StatusBadge } from './StatusBadge';
 /** Detail panel rendered over the list at /orders/:orderId, keeping the list's filters (R1-11). */
 export function OrderDrawer() {
   const { orderId } = useParams();
-  const id = Number(orderId);
-  const isValidId = Number.isInteger(id) && id > 0;
+  const id = parseOrderId(orderId); // the server's rule: "1e3" is not order 1000
   const navigate = useNavigate();
   const { search } = useLocation();
   const panelRef = useRef<HTMLElement>(null);
   const order = useQuery({
     queryKey: orderKeys.detail(id),
-    queryFn: ({ signal }) => getOrder(id, signal),
-    enabled: isValidId,
+    queryFn: id === null ? skipToken : ({ signal }) => getOrder(id, signal),
   });
 
   const close = useCallback(
@@ -48,7 +46,7 @@ export function OrderDrawer() {
     );
 
   let content;
-  if (!isValidId) {
+  if (id === null) {
     content = <p>This order does not exist.</p>;
   } else if (order.isPending) {
     content = <p className="muted">Loading order…</p>;

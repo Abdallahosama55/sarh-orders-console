@@ -5,6 +5,7 @@ import {
   createOrderInputSchema,
   idempotencyKeySchema,
   listOrdersQuerySchema,
+  parseOrderId,
   type ListOrdersQuery,
   type ListOrdersResponse,
 } from '@orders/shared';
@@ -68,7 +69,7 @@ export function createOrdersRouter({
   });
 
   router.get('/:id', (req, res) => {
-    const id = parseOrderId(req.params.id);
+    const id = requireOrderId(req.params.id);
     const order = orders.getOrderDetail(id);
     if (!order) throw new HttpError(404, 'not_found', `Order #${id} was not found.`);
     res.json(order);
@@ -90,7 +91,7 @@ export function createOrdersRouter({
 
   // Admin-only, enforced here and not in the UI (SEC-6). Soft delete keeps the financial record.
   router.delete('/:id', requireRole('admin'), (req, res) => {
-    const id = parseOrderId(req.params.id);
+    const id = requireOrderId(req.params.id);
     if (!orders.softDeleteOrder(id, currentUser(req).id, Date.now())) {
       throw new HttpError(404, 'not_found', `Order #${id} was not found.`);
     }
@@ -112,13 +113,14 @@ function cursorPosition(query: ListOrdersQuery): { value: number; id: number } {
   return { value: cursor.value, id: cursor.id };
 }
 
-function parseOrderId(raw: unknown): number {
-  if (typeof raw !== 'string' || !/^[1-9]\d{0,8}$/.test(raw)) {
+function requireOrderId(raw: unknown): number {
+  const id = typeof raw === 'string' ? parseOrderId(raw) : null;
+  if (id === null) {
     throw new HttpError(400, 'validation_failed', 'Order id must be a positive integer.', {
       fields: { id: 'Order id must be a positive integer.' },
     });
   }
-  return Number(raw);
+  return id;
 }
 
 function parseIdempotencyKey(raw: string | undefined): string {
