@@ -1,5 +1,5 @@
-import { useMemo, type ReactNode } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { Link, Outlet } from 'react-router';
 import { formatCount, STATUS_LABELS } from '../lib/format';
 import { useDebouncedValue } from '../lib/use-debounced-value';
 import type { OrderFilters } from './order-filters';
@@ -10,8 +10,32 @@ import { useOrdersList, type OrdersListQuery } from './use-orders-list';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+/** What the order drawer, a child route, can tell the list underneath it. */
+export interface OrdersOutletContext {
+  onOrderDeleted: (orderId: number) => void;
+}
+
 export function OrdersPage() {
   const { filters, updateFilters, clearFilters } = useOrderFilters();
+  // Component state, not history state: history state survives a reload and Back, which
+  // would show "Order #42 was deleted." again long after the fact.
+  const [flash, setFlash] = useState<string | null>(null);
+  const outletContext = useMemo<OrdersOutletContext>(
+    () => ({ onOrderDeleted: (orderId) => setFlash(`Order #${orderId} was deleted.`) }),
+    [],
+  );
+  // Once the agent changes the filters, the message has served its purpose.
+  const onFiltersChange = useCallback(
+    (patch: Partial<OrderFilters>) => {
+      setFlash(null);
+      updateFilters(patch);
+    },
+    [updateFilters],
+  );
+  const onClearFilters = useCallback(() => {
+    setFlash(null);
+    clearFilters();
+  }, [clearFilters]);
   // The search box updates the URL on every keystroke; only the settled text becomes a query.
   const settledSearch = useDebouncedValue(filters.q?.trim() ?? '', SEARCH_DEBOUNCE_MS);
   const queryFilters = useMemo<OrderFilters>(
@@ -33,16 +57,20 @@ export function OrdersPage() {
           New order
         </Link>
       </div>
-      <FlashMessage />
-      <OrdersToolbar filters={filters} onChange={updateFilters} />
+      {flash && (
+        <p className="alert alert--success" role="status">
+          {flash}
+        </p>
+      )}
+      <OrdersToolbar filters={filters} onChange={onFiltersChange} />
       <ResultSummary list={list} filters={queryFilters} />
       <OrdersTable
         key={JSON.stringify(queryFilters)}
         list={list}
         filters={queryFilters}
-        onClearFilters={clearFilters}
+        onClearFilters={onClearFilters}
       />
-      <Outlet />
+      <Outlet context={outletContext} />
     </section>
   );
 }
@@ -74,23 +102,6 @@ function ResultSummary({ list, filters }: { list: OrdersListQuery; filters: Orde
     <p className="result-summary" role="status">
       {summary}
       {refreshing && <span className="muted"> · updating…</span>}
-    </p>
-  );
-}
-
-function FlashMessage() {
-  const state: unknown = useLocation().state;
-  const message =
-    typeof state === 'object' &&
-    state !== null &&
-    'flash' in state &&
-    typeof state.flash === 'string'
-      ? state.flash
-      : null;
-  if (!message) return null;
-  return (
-    <p className="alert alert--success" role="status">
-      {message}
     </p>
   );
 }

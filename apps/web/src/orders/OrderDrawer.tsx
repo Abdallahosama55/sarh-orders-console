@@ -1,12 +1,13 @@
 import { parseOrderId, type OrderDetail } from '@orders/shared';
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router';
 import { AdminOnly } from '../auth/AdminOnly';
 import { ApiError, errorMessage } from '../lib/api-client';
 import { formatDateTime, formatMoney } from '../lib/format';
 import { DeleteOrderButton } from './DeleteOrderButton';
 import { getOrder } from './orders-api';
+import type { OrdersOutletContext } from './OrdersPage';
 import { orderKeys } from './query-keys';
 import { StatusBadge } from './StatusBadge';
 
@@ -14,6 +15,7 @@ import { StatusBadge } from './StatusBadge';
 export function OrderDrawer() {
   const { orderId } = useParams();
   const id = parseOrderId(orderId); // the server's rule: "1e3" is not order 1000
+  const { onOrderDeleted } = useOutletContext<OrdersOutletContext>();
   const navigate = useNavigate();
   const { search } = useLocation();
   const panelRef = useRef<HTMLElement>(null);
@@ -39,11 +41,10 @@ export function OrderDrawer() {
     panelRef.current?.focus(); // move focus into the panel so keyboard users land on it
   }, [id]);
 
-  const onDeleted = () =>
-    void navigate(
-      { pathname: '/orders', search },
-      { state: { flash: `Order #${id} was deleted.` } },
-    );
+  const onDeleted = (deletedId: number) => {
+    onOrderDeleted(deletedId);
+    void navigate({ pathname: '/orders', search });
+  };
 
   let content;
   if (id === null) {
@@ -89,7 +90,13 @@ export function OrderDrawer() {
   );
 }
 
-function OrderDetails({ order, onDeleted }: { order: OrderDetail; onDeleted: () => void }) {
+function OrderDetails({
+  order,
+  onDeleted,
+}: {
+  order: OrderDetail;
+  onDeleted: (orderId: number) => void;
+}) {
   return (
     <>
       <dl className="details">
@@ -156,7 +163,7 @@ function OrderDetails({ order, onDeleted }: { order: OrderDetail; onDeleted: () 
         </tfoot>
       </table>
       <AdminOnly>
-        <DeleteOrderButton orderId={order.id} onDeleted={onDeleted} />
+        <DeleteOrderButton orderId={order.id} onDeleted={() => onDeleted(order.id)} />
       </AdminOnly>
     </>
   );

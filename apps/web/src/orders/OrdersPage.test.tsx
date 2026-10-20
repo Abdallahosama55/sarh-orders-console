@@ -187,7 +187,7 @@ describe('OrdersPage', () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { events } = renderApp('/orders/50000', { user: adminUser });
+    const { events, router } = renderApp('/orders/50000', { user: adminUser });
 
     const panel = await screen.findByRole('dialog', { name: 'Order #50000' });
     await events.click(await within(panel).findByRole('button', { name: 'Delete order' }));
@@ -196,6 +196,11 @@ describe('OrdersPage', () => {
     expect(await screen.findByText('Order #50000 was deleted.')).toBeInTheDocument();
     expect(deleted).toEqual(['50000']);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // History state survives a reload and Back, so the message must not live there.
+    expect(router.state.location.state).toBeNull();
+
+    await events.type(screen.getByRole('searchbox'), 'x'); // the agent moves on
+    expect(screen.queryByText('Order #50000 was deleted.')).not.toBeInTheDocument();
   });
 
   it('treats a non-canonical id in the URL as no order instead of loading another', async () => {
