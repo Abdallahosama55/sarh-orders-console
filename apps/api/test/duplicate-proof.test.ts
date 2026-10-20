@@ -12,4 +12,15 @@ describe('duplicate proof (two API processes, one database)', () => {
     expect(result.totalOrders).toBe(2);
     expect(result.passed).toBe(true);
   }, 60_000);
+
+  it('fails fast, instead of hanging, when an API process cannot start', async () => {
+    const appOrigin = process.env.APP_ORIGIN;
+    process.env.APP_ORIGIN = 'not a url'; // inherited by both API processes, which then exit
+    try {
+      await expect(runDuplicateProof()).rejects.toThrow(/exited early/);
+    } finally {
+      if (appOrigin === undefined) delete process.env.APP_ORIGIN;
+      else process.env.APP_ORIGIN = appOrigin;
+    }
+  }, 30_000);
 });

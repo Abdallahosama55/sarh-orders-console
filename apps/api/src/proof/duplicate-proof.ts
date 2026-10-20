@@ -158,11 +158,19 @@ export async function runDuplicateProof(
     }
   } finally {
     for (const server of servers) server.kill('SIGTERM');
-    await Promise.all(
-      servers.map((server) => new Promise((resolve) => server.once('exit', resolve))),
-    );
+    await Promise.all(servers.map(exited));
     rmSync(workDir, { recursive: true, force: true });
   }
+}
+
+/** 'exit' fires only once, so a process that has already exited must not be waited on. */
+function hasExited(child: ChildProcess): boolean {
+  return child.exitCode !== null || child.signalCode !== null;
+}
+
+function exited(child: ChildProcess): Promise<void> {
+  if (hasExited(child)) return Promise.resolve();
+  return new Promise((resolve) => child.once('exit', () => resolve()));
 }
 
 function logScenario(log: (line: string) => void, index: number, scenario: ScenarioResult): void {
@@ -213,8 +221,9 @@ async function startServer(
   servers.push(child);
   const url = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    if (child.exitCode !== null)
-      throw new Error(`API process exited early with code ${child.exitCode}`);
+    if (hasExited(child)) {
+      throw new Error(`API process exited early (${child.exitCode ?? child.signalCode})`);
+    }
     try {
       if ((await fetch(`${url}/api/health`)).ok) return url;
     } catch {
