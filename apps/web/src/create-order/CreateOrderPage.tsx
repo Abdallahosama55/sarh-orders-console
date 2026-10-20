@@ -67,7 +67,7 @@ export function CreateOrderPage() {
     try {
       const result = await createOrder.mutateAsync({
         input: toCreateOrderInput(values),
-        idempotencyKey: draft.idempotencyKey,
+        idempotencyKey: draft.currentKey(),
       });
       draft.discard();
       setCreated(result);

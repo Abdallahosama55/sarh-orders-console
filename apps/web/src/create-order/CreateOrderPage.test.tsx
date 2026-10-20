@@ -247,4 +247,23 @@ describe('CreateOrderPage', () => {
     expect(posts[1]!.key).toMatch(UUID);
     expect(posts[1]!.key).not.toBe(posts[0]!.key);
   });
+
+  it('never restores a spent key when the agent reloads right after "Create another order"', async () => {
+    const posts = recordPosts(() => created());
+    const first = await openForm();
+    await fillValidOrder(first.events);
+    await first.events.click(createButton());
+    await screen.findByRole('heading', { name: 'Order #50001 created' });
+    // reset() saves the emptied form synchronously, before React re-renders with the new key.
+    await first.events.click(screen.getByRole('button', { name: 'Create another order' }));
+    first.unmount(); // reload before typing anything
+
+    const second = await openForm();
+    await fillValidOrder(second.events);
+    await second.events.click(createButton());
+    await waitFor(() => expect(posts).toHaveLength(2));
+    // With the spent key, the server would replay order #50001 instead of creating this one.
+    expect(posts[1]!.key).toMatch(UUID);
+    expect(posts[1]!.key).not.toBe(posts[0]!.key);
+  });
 });

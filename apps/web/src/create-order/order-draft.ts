@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { readStored, removeStored, writeStored } from '../lib/storage';
 import { emptyOrderForm, type OrderFormValues } from './order-form';
@@ -55,28 +55,38 @@ export function readDraft(): OrderDraft | null {
   }
 }
 
+const freshDraft = (): OrderDraft => ({
+  idempotencyKey: newIdempotencyKey(),
+  values: emptyOrderForm(),
+});
+
 export function useOrderDraft() {
-  const [draft, setDraft] = useState<OrderDraft>(
-    () => readDraft() ?? { idempotencyKey: newIdempotencyKey(), values: emptyOrderForm() },
-  );
-  const { idempotencyKey } = draft;
+  const [initial] = useState(() => readDraft() ?? freshDraft());
+  // The current key is a ref, not state. "Create another order" swaps the key and resets the
+  // form in one event, and reset() saves the emptied form synchronously, before React
+  // re-renders. A key read from state at that moment would still be the spent one, and a
+  // reload would bring it back: the next order would then replay the previous one.
+  const key = useRef(initial.idempotencyKey);
 
   const save = useCallback(
     (values: OrderFormValues) =>
-      writeStored('session', STORAGE_KEY, JSON.stringify({ idempotencyKey, values })),
-    [idempotencyKey],
+      writeStored('session', STORAGE_KEY, JSON.stringify({ idempotencyKey: key.current, values })),
+    [],
   );
+
+  /** The key to send. Read it when submitting, not during render. */
+  const currentKey = useCallback(() => key.current, []);
 
   /** After a confirmed success: nothing left to retry. */
   const discard = useCallback(() => removeStored('session', STORAGE_KEY), []);
 
   /** "Create another order": a fresh draft with a fresh key. */
   const startNew = useCallback((): OrderDraft => {
-    const next = { idempotencyKey: newIdempotencyKey(), values: emptyOrderForm() };
+    const next = freshDraft();
+    key.current = next.idempotencyKey;
     removeStored('session', STORAGE_KEY);
-    setDraft(next);
     return next;
   }, []);
 
-  return { idempotencyKey, initialValues: draft.values, save, discard, startNew };
+  return { initialValues: initial.values, currentKey, save, discard, startNew };
 }
