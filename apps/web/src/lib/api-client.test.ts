@@ -45,6 +45,22 @@ describe('apiRequest', () => {
     expect(isRetryableError(error)).toBe(true);
   });
 
+  it('reports a connection that drops while the body arrives as a retryable NetworkError', async () => {
+    server.use(
+      http.get(
+        '/api/thing',
+        () =>
+          new HttpResponse(
+            new ReadableStream({ start: (stream) => stream.error(new TypeError('terminated')) }),
+            { status: 201, headers: { 'Content-Type': 'application/json' } },
+          ),
+      ),
+    );
+    const error = await apiRequest('/thing').catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(NetworkError);
+    expect(isRetryableError(error)).toBe(true); // a create retries with the same key
+  });
+
   it('reports its own timeout as a NetworkError', async () => {
     server.use(
       http.get('/api/thing', async () => {

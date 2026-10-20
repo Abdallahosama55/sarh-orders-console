@@ -46,6 +46,7 @@ export async function apiRequest<T>(
   );
 
   let response: Response;
+  let payload: unknown;
   try {
     response = await fetch(`/api${path}`, {
       method,
@@ -58,6 +59,8 @@ export async function apiRequest<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0],
     });
+    // The body can fail after the headers arrived: a dropped connection, or our timeout.
+    payload = await readJson(response);
   } catch (error) {
     // Cancelled by the caller (filters changed, page left): rethrow the AbortError untouched so
     // React Query treats it as a cancellation rather than a failure.
@@ -68,7 +71,6 @@ export async function apiRequest<T>(
     );
   }
 
-  const payload = await readJson(response);
   if (!response.ok) throw toApiError(response.status, payload);
   return { data: payload as T, status: response.status, headers: response.headers };
 }
