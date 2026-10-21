@@ -195,7 +195,8 @@ describe('OrdersPage', () => {
 
     expect(await screen.findByText('Order #50000 was deleted.')).toBeInTheDocument();
     expect(deleted).toEqual(['50000']);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // The message is list state; closing the drawer is a navigation, which can land a moment later.
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     // History state survives a reload and Back, so the message must not live there.
     expect(router.state.location.state).toBeNull();
 
